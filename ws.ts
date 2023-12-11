@@ -4,6 +4,7 @@ import WebSocket from "ws";
 const PORT = process.env.WSS_PORT || 5050;
 
 let server = http.createServer();
+const connections = new Set<WebSocket>();
 
 const wss = new WebSocket.Server({ server });
 
@@ -12,24 +13,30 @@ export type WsMessage = {
   message: string;
 };
 
-export async function setWsCallbacks(
+export function setWsCallbacks(
   onConnection: () => void,
   onMessage: (message: WsMessage) => void
-) : Promise<WebSocket> {
-  const promise = new Promise<WebSocket>((resolve, reject) => {
-    wss.on("connection", (ws) => {
-      onConnection();
-      ws.on("message", (message) => {
-        const messageString = message.toString();
-        onMessage && onMessage(JSON.parse(messageString) as WsMessage);
-      });
-      resolve(ws);
+) {
+  wss.on("connection", (ws) => {
+    onConnection();
+    ws.on("message", (message) => {
+      const messageString = message.toString();
+      onMessage && onMessage(JSON.parse(messageString) as WsMessage);
+    });
+    connections.add(ws);
+
+    ws.on("close", () => {
+      connections.delete(ws);
     });
   });
-
-  return promise;
 }
 
 server.listen(PORT, () => {
   console.log(`WS server is listening on port ${PORT}`);
 });
+
+export function broadcast(message: WsMessage) {
+  connections.forEach((conn) => {
+    conn.send(JSON.stringify(message));
+  });
+}

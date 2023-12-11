@@ -2,11 +2,9 @@ import dotenv from "dotenv";
 dotenv.config();
 import { SerialPort } from "serialport";
 import { ReadlineParser } from "@serialport/parser-readline";
-import { setWsCallbacks } from "./ws";
+import { setWsCallbacks, broadcast } from "./ws";
 import type { WsMessage } from "./ws";
 import type { WebSocket } from "ws";
-
-let ws: WebSocket | null = null;
 
 SerialPort.list().then((ports) => {
   ports.forEach((port) => {
@@ -36,7 +34,7 @@ port.on('open', function() {
 
 parser.on("data", function (data) {
   //console.log(data);
-  ws?.send(JSON.stringify({ type: "message", message: data } as WsMessage));
+  broadcast({ type: "message", message: data });
 });
 
 function write(data: string) {
@@ -56,17 +54,14 @@ setWsCallbacks(
     console.log("WS message: ", message);
     onIncomingWs(message);
   }
-).then((ws_) => {
-  ws = ws_;
-  console.log("WS client ready");
-});
+);
 
 function onIncomingWs(msg: WsMessage) {
   console.log("received ws message of type: %s", msg.type);
 
   switch (msg.type) {
     case "ping":
-      ws?.send(JSON.stringify({ type: "pong" }));
+      broadcast({ type: "pong", message: "pong" });
       break;
     case "log":
       console.log("log: %s", msg.message);
