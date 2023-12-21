@@ -4,7 +4,6 @@ import { SerialPort } from "serialport";
 import { ReadlineParser } from "@serialport/parser-readline";
 import { setWsCallbacks, broadcast } from "./ws";
 import type { WsMessage } from "./ws";
-import type { WebSocket } from "ws";
 
 SerialPort.list().then((ports) => {
   ports.forEach((port) => {
@@ -14,7 +13,7 @@ SerialPort.list().then((ports) => {
 
 // Create a port
 const port = new SerialPort({
-  path: "COM5",
+  path: "COM9",
   baudRate: 115200,
 });
 
